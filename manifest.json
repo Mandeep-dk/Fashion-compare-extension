@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Fashion Product Comparison",
+  "version": "1.0",
+  "description": "Compare fashion products and find coupons.",
+  "permissions": [
+    "activeTab",
+    "tabs", 
+    "storage", 
+    "scripting",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://www.amazon.in/*",
+    "https://www.flipkart.com/*",
+    "https://www.myntra.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src http://localhost:3000"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.in/*",
+        "https://www.flipkart.com/*",
+        "https://www.myntra.com/*"
+      ],
+      "js": ["content.js"]
+    }
+  ]
+}

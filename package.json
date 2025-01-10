@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@huggingface/transformers": "^3.2.4",
+    "canvas": "^3.0.1",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "opencv.js": "^1.2.1",
+    "puppeteer": "^23.11.1",
+    "resemblejs": "^5.0.0",
+    "string-similarity": "^4.0.4"
+  },
+  "devDependencies": {
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "type": "commonjs"
+}
