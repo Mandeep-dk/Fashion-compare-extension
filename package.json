@@ -5,6 +5,7 @@
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3",
     "opencv.js": "^1.2.1",
     "puppeteer": "^23.11.1",
     "resemblejs": "^5.0.0",

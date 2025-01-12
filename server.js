@@ -8,35 +8,21 @@ const port = 3000;
 const cors = require('cors');
 app.use(cors());
 
+//use the required endpoints for reverse proxy 
+// const { createProxyMiddleware } = require('http-proxy-middleware');
+// app.use('/scrape-amazon', createProxyMiddleware({ target: 'http://localhost:5000/', changeOrigin: true }));
+
 const cleanPrice = (priceString) => {
     const cleanedPrice = priceString.replace(/[^\d.]/g, '').trim();  // Remove non-numeric characters
     return parseFloat(cleanedPrice);
 };
 
-// Price similarity logic update
-const comparePrices = (price1, price2) => {
-    const cleanedPrice1 = cleanPrice(price1);
-    const cleanedPrice2 = cleanPrice(price2);
-
-    if (!isNaN(cleanedPrice1) && !isNaN(cleanedPrice2)) {
-        // Calculate absolute difference to handle small discrepancies
-        const priceDifference = Math.abs(cleanedPrice1 - cleanedPrice2);
-        const averagePrice = (cleanedPrice1 + cleanedPrice2) / 2;
-
-        // Calculate the similarity score
-        const similarityScore = 1 - (priceDifference / averagePrice);
-
-        // Adjust the threshold based on your needs (e.g., only accept similarity > 0.90)
-        return similarityScore > 0.90 ? similarityScore : 0;  // Only return similarity if it's above 90%
-    }
-    return 0;  // Return 0 if one of the prices is not valid
-};
-
-// Scrape Amazon
+// Route to scrape Amazon product information
 app.get('/scrape-amazon', async (req, res) => {
-    const { url } = req.query;
-    // console.log('Scraping Amazon URL:', url);
+    const { url } = req.query; // Get the Amazon product URL from query params
+    console.log('Scraping Amazon URL:', url);
 
+    // Extract the product name from the URL using regex
     const regex = /\/dp\/[^/]+\/.*?keywords=([^&]*)/;
     const match = url.match(regex);
 
@@ -46,6 +32,8 @@ app.get('/scrape-amazon', async (req, res) => {
     } else {
         console.log('Product name not found');
     }
+
+    // Search for the product on Amazon using the extracted keywords
     const amazonUrl = await fetch(`https://www.amazon.in/s?k=${encodeURIComponent(productNameFromUrl)}`, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -54,20 +42,24 @@ app.get('/scrape-amazon', async (req, res) => {
             'Connection': 'keep-alive'
         }
     });
+
+    // Parse the Amazon search result HTML using Cheerio
     const amazonHtml = await amazonUrl.text();
     const amazon = cheerio.load(amazonHtml);
 
+    // Extract product prices from Amazon search results
     const amazonPrice = [];
     amazon('.a-price').each((index, element) => {
         const price = amazon(element).find('.a-price-whole').text().trim();
         if (price) {
             const cleanedPrice = cleanPrice(price);
-            if (!isNaN(cleanedPrice) && cleanedPrice > 100) {  // Only consider prices above 100
+            if (!isNaN(cleanedPrice) && cleanedPrice > 100) { // Only consider prices above 100
                 amazonPrice.push(cleanedPrice);
             }
         }
     });
 
+    // Use Puppeteer to scrape additional details from the product page
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-extensions']
@@ -75,102 +67,81 @@ app.get('/scrape-amazon', async (req, res) => {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
+    // Extract product title and price from the product page
     const content = await page.content();
     const $ = cheerio.load(content);
-
     const amazonActualTitle = $('#productTitle').text().trim() || 'Title not found';
     const amazonActualPrice = $('.a-price-whole').first().text().trim() || 'Price not found';
 
     console.log("Amazon product title: ", amazonActualTitle);
     console.log("Amazon product price: ", amazonActualPrice);
-    // const cleanedAmazonPrice = cleanPrice(price);
 
+    await page.setCacheEnabled(false);
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
     await browser.close();
 
+    // Scrape Myntra for similar products
     const browser1 = await puppeteer.launch({
-        headless: true, // Run without a UI
+        headless: true,
         args: ['--no-sandbox', '--disable-extensions']
     });
-
     const page1 = await browser1.newPage();
     await page1.setExtraHTTPHeaders({
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
     });
-
     await page1.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
     const myntraUrl = `https://www.myntra.com/${encodeURIComponent(productNameFromUrl)}`;
     await page1.goto(myntraUrl, { waitUntil: 'domcontentloaded' });
 
-    // Wait for the product links to load
+    // Wait for products to load and extract product details
     await page1.waitForSelector('.product-base');
-
     const myntraProducts = await page1.evaluate(() => {
         const products = [];
         document.querySelectorAll('.product-base').forEach((product) => {
             const linkElement = product.querySelector('a');
             const discountedPrice = product.querySelector('.product-discountedPrice');
-
             const link = linkElement ? linkElement.href : null;
             const price = discountedPrice ? parseInt(discountedPrice.innerText.trim().replace(/[^\d]/g, ''), 10) : null;
             const title = product.querySelector('.product-product') ? product.querySelector('.product-product').innerText.trim() : null;
-
             if (link && price && title) {
                 products.push({ link, price, title });
             }
         });
-        return products; // Return the products array
+        return products;
     });
 
-    // const cleanedMyntraProducts = myntraProducts.map(product => ({
-    //     ...product,
-    //     price: parseInt(product.price.replace(/[^\d]/g, ''), 10) // Apply cleanPrice here
-    // }));
+    await browser1.close();
+
+    // Scrape Flipkart for similar products
     const browser2 = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page2 = await browser2.newPage();
-
-    // Set a user-agent to mimic a real browser
     await page2.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-    // Construct the Flipkart search URL
     const flipkartSearchUrl = `https://www.flipkart.com/search?q=${encodeURIComponent(productNameFromUrl)}`;
-
-    // Navigate to the Flipkart search page
     await page2.goto(flipkartSearchUrl, { waitUntil: 'networkidle2' });
 
-    // Extract the HTML content of the page
     const flipkartHtml = await page2.content();
-
-    // Load Cheerio to parse the HTML
     const flipkart = cheerio.load(flipkartHtml);
 
     const flipkartProducts = [];
-
     flipkart('a[target="_blank"]').each((index, element) => {
         const productElement = flipkart(element);
         const productLink = productElement.attr('href');
-
-        const regex = /\/([^\/]+)\/p\//; // Matches the part after '/' and before '/p/'
+        const regex = /\/([^\/]+)\/p\//;
         const match = productLink.match(regex);
-
         let productNameFromUrl = '';
         if (match && match[1]) {
             productNameFromUrl = decodeURIComponent(match[1]).replace(/\+/g, ' ');
         } else {
             console.log('Product name not found');
         }
-
         const fullLink = `https://www.flipkart.com${productLink}`;
-
-        // Dynamically find the price (target elements containing price)
-        const priceText = productElement.find('.Nx9bqj').text().trim(); // Use multiple selectors to handle dynamic class names
-
-        // console.log(`Product Link: ${productLink}, Price Text: ${priceText}, Title: ${productNameFromUrl}`);
-
+        const priceText = productElement.find('.Nx9bqj').text().trim();
         if (productLink && priceText && productNameFromUrl) {
             flipkartProducts.push({
                 link: fullLink,
@@ -180,27 +151,19 @@ app.get('/scrape-amazon', async (req, res) => {
         }
     });
 
-    await browser1.close();
-    // console.log("Myntra", myntraProducts);
-    // console.log("Flipkart", flipkartProducts);
+    await browser2.close();
 
+    // Filter products with prices lower than the Amazon price and compare similarity
     const similarPrices = [];
-
-    // Filter Myntra products with price less than Amazon price
     const filteredMyntraProducts = myntraProducts.filter(({ price }) => price < Number(amazonActualPrice));
-    console.log(filteredMyntraProducts)
-    // Filter Flipkart products with price less than Amazon price
     const filteredFlipkartProducts = flipkartProducts.filter(({ price }) => price < Number(amazonActualPrice));
-    console.log(filteredFlipkartProducts);
 
-    // Add filtered Myntra products to similarPrices
     filteredMyntraProducts.forEach(({ price: myntraPrice, link: myntraLink, title: myntraTitle }) => {
         const similarityMyntra = stringSimilarity.compareTwoStrings(amazonActualTitle, myntraTitle);
-        console.log("Myntra similarity", similarityMyntra);
         if (similarityMyntra > 0.3) {
             similarPrices.push({
                 myntraLink,
-                flipkartLink: null, // No matching Flipkart product
+                flipkartLink: null,
                 amazonPrice: Number(amazonActualPrice),
                 myntraPrice,
                 flipkartPrice: null,
@@ -208,14 +171,11 @@ app.get('/scrape-amazon', async (req, res) => {
         }
     });
 
-    // Add filtered Flipkart products to similarPrices
     filteredFlipkartProducts.forEach(({ price: flipkartPrice, link: flipkartLink, title: flipkartTitle }) => {
         const similarityFlipkart = stringSimilarity.compareTwoStrings(amazonActualTitle, flipkartTitle);
-        console.log("Flipkart similarity", similarityFlipkart);
-
         if (similarityFlipkart > 0.3) {
             similarPrices.push({
-                myntraLink: null, // No matching Myntra product
+                myntraLink: null,
                 flipkartLink,
                 amazonPrice: Number(amazonActualPrice),
                 myntraPrice: null,
@@ -224,14 +184,11 @@ app.get('/scrape-amazon', async (req, res) => {
         }
     });
 
-    // Combine products where both Myntra and Flipkart meet the conditions
+    // Combine products from both Myntra and Flipkart based on similarity
     filteredMyntraProducts.forEach(({ price: myntraPrice, link: myntraLink, title: myntraTitle }) => {
         filteredFlipkartProducts.forEach(({ price: flipkartPrice, link: flipkartLink, title: flipkartTitle }) => {
             const similarityFlipkart = stringSimilarity.compareTwoStrings(amazonActualTitle, flipkartTitle);
             const similarityMyntra = stringSimilarity.compareTwoStrings(amazonActualTitle, myntraTitle);
-            console.log("Myntra Title:", myntraTitle, "Similarity:", similarityMyntra);
-            console.log("Flipkart Title:", flipkartTitle, "Similarity:", similarityFlipkart);
-
             if (similarityFlipkart > 0.3 || similarityMyntra > 0.3) {
                 similarPrices.push({
                     myntraLink,
@@ -248,19 +205,23 @@ app.get('/scrape-amazon', async (req, res) => {
     res.json(similarPrices);
 });
 
+// Define an endpoint to scrape data from Flipkart, Amazon, and Myntra for price comparison
 app.get('/scrape-flipkart', async (req, res) => {
-    const { url } = req.query;
+    const { url } = req.query; // Get the Flipkart product URL from the query parameters
 
+    // Extract product name from the Flipkart URL using regex
     const regex = /flipkart\.com\/([^\/]+)\/p\//;
     const match = url.match(regex);
 
     let productNameFromUrl = '';
     if (match && match[1]) {
+        // Decode the product name and replace '+' with space
         productNameFromUrl = decodeURIComponent(match[1]).replace(/\+/g, ' ');
     } else {
         console.log('Product name not found');
     }
 
+    // Fetch search results for the product on Amazon
     const amazonUrl = await fetch(`https://www.amazon.in/s?k=${encodeURIComponent(productNameFromUrl)}`, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -272,20 +233,21 @@ app.get('/scrape-flipkart', async (req, res) => {
     const amazonHtml = await amazonUrl.text();
     const amazon = cheerio.load(amazonHtml);
 
+    // Extract product details from Amazon search results
     const amazonProducts = [];
     amazon('.s-main-slot .s-result-item').each((index, element) => {
         const priceText = amazon(element).find('.a-price-whole').text().trim();
         const link = amazon(element).find('a.a-link-normal').attr('href');
         if (priceText && link) {
             amazonProducts.push({
-                price: cleanPrice(priceText),
+                price: cleanPrice(priceText), // Clean and parse the price
                 link: `https://www.amazon.in${link}`,
                 title: amazon(element).find('h2').text().trim() // Capture the product title
             });
         }
     });
 
-    // Fetch Flipkart product data
+    // Fetch search results for the product on Flipkart
     const flipkartUrl = await fetch(`https://www.flipkart.com/search?q=${encodeURIComponent(productNameFromUrl)}`, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -294,10 +256,11 @@ app.get('/scrape-flipkart', async (req, res) => {
             'Connection': 'keep-alive'
         }
     });
-    console.log(productNameFromUrl);
+    console.log(productNameFromUrl); // Log the product name for debugging
     const flipkartHtml = await flipkartUrl.text();
     const flipkart = cheerio.load(flipkartHtml);
 
+    // Extract product details from Flipkart search results
     const flipkartProducts = [];
     flipkart('._1sdMkc a').each((index, element) => {
         const productLink = flipkart(element).attr('href');
@@ -312,6 +275,7 @@ app.get('/scrape-flipkart', async (req, res) => {
         }
     });
 
+    // Launch Puppeteer for scraping Myntra data
     const browser1 = await puppeteer.launch({
         headless: true, // Run without a UI
         args: ['--no-sandbox', '--disable-extensions']
@@ -325,12 +289,14 @@ app.get('/scrape-flipkart', async (req, res) => {
 
     await page1.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
+    // Visit the Myntra search page
     const myntraUrl = `https://www.myntra.com/${encodeURIComponent(productNameFromUrl)}`;
     await page1.goto(myntraUrl, { waitUntil: 'domcontentloaded' });
 
-    // Wait for the product links to load
+    // Wait for product elements to load on Myntra
     await page1.waitForSelector('.product-base');
 
+    // Extract product details from Myntra
     const myntraProducts = await page1.evaluate(() => {
         const products = [];
         document.querySelectorAll('.product-base').forEach((product) => {
@@ -348,10 +314,9 @@ app.get('/scrape-flipkart', async (req, res) => {
         return products; // Return the products array
     });
 
+    await browser1.close(); // Close the Puppeteer browser instance
 
-    await browser1.close();
-
-    // Extract product title and price from Flipkart page using Puppeteer
+    // Use Puppeteer to scrape actual Flipkart product details
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-extensions']
@@ -363,45 +328,46 @@ app.get('/scrape-flipkart', async (req, res) => {
     const content = await page.content();
     const $ = cheerio.load(content);
 
+    // Extract Flipkart product title and price
     const flipkartActualTitle = $('.VU-ZEz').text().trim() || 'Title not found';
     const price = $('.Nx9bqj.CxhGGd').text().trim() || 'Price not found';
     const flipkartActualPrice = cleanPrice(price);
-    
+
     console.log("Flipkart product title: ", flipkartActualTitle);
     console.log("Flipkart product price: ", flipkartActualPrice);
 
-    await browser.close();
+    await browser.close(); // Close Puppeteer
 
     const similarPrices = [];
 
-    // Filter Myntra products with price less than Amazon price
+    // Filter Amazon products with price less than Flipkart's price
     const filteredAmazonProducts = amazonProducts.filter(({ price }) => price < flipkartActualPrice);
-    console.log(filteredAmazonProducts)
-    // console.log(myntraProducts)
-    const filteredMyntraProducts = myntraProducts.filter(({ price }) => price < flipkartActualPrice);
-    console.log(filteredMyntraProducts)
+    console.log(filteredAmazonProducts);
 
-    // Add filtered Myntra products to similarPrices
+    // Filter Myntra products with price less than Flipkart's price
+    const filteredMyntraProducts = myntraProducts.filter(({ price }) => price < flipkartActualPrice);
+    console.log(filteredMyntraProducts);
+
+    // Compare titles for similarity and add Amazon products
     filteredAmazonProducts.forEach(({ price: amazonPrice, link: amazonLink, title: amazonTitle }) => {
         const similarityAmazon = stringSimilarity.compareTwoStrings(flipkartActualTitle, amazonTitle);
         if (similarityAmazon > 0.3) {
             similarPrices.push({
                 amazonLink,
-                myntraLink: null, 
-                amazonPrice: amazonPrice,
+                myntraLink: null,
                 amazonPrice,
                 flipkartPrice: flipkartActualPrice,
             });
         }
     });
 
-    // Add filtered Flipkart products to similarPrices
+    // Compare titles for similarity and add Myntra products
     filteredMyntraProducts.forEach(({ price: myntraPrice, link: myntraLink, title: myntraTitle }) => {
         const similarityMyntra = stringSimilarity.compareTwoStrings(flipkartActualTitle, myntraTitle);
 
         if (similarityMyntra > 0.3) {
             similarPrices.push({
-                amazonLink: null, // No matching Myntra product
+                amazonLink: null,
                 myntraLink,
                 flipkartPrice: flipkartActualPrice,
                 amazonPrice: null,
@@ -410,7 +376,7 @@ app.get('/scrape-flipkart', async (req, res) => {
         }
     });
 
-    // Combine products where both Myntra and Flipkart meet the conditions
+    // Combine Amazon and Myntra products if both match the conditions
     filteredAmazonProducts.forEach(({ price: amazonPrice, link: amazonLink, title: amazonTitle }) => {
         filteredMyntraProducts.forEach(({ price: myntraPrice, link: myntraLink, title: myntraTitle }) => {
             const similarityAmazon = stringSimilarity.compareTwoStrings(flipkartActualTitle, myntraTitle);
@@ -428,15 +394,18 @@ app.get('/scrape-flipkart', async (req, res) => {
         });
     });
 
-    console.log("Similar Prices with links:", similarPrices);
-    res.json(similarPrices);
+    console.log("Similar Prices with links:", similarPrices); // Log the final comparison results
+    res.json(similarPrices); // Send the data as a JSON response
 });
 
 
+
+// Route to scrape Myntra and compare prices with Amazon and Flipkart
 app.get('/scrape-myntra', async (req, res) => {
-    const { url } = req.query;
+    const { url } = req.query; // Extract URL from query parameters
     console.log('Scraping Myntra URL:', url);
 
+    // Extract product name from Myntra URL using regex
     const regex = /myntra\.com\/[^\/]+\/[^\/]+\/([^\/]+)\//;
     const match = url.match(regex);
 
@@ -447,6 +416,7 @@ app.get('/scrape-myntra', async (req, res) => {
         console.log('Product name not found');
     }
 
+    // Fetch search results from Amazon
     const amazonUrl = await fetch(`https://www.amazon.in/s?k=${encodeURIComponent(productNameFromUrl)}`, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -458,6 +428,7 @@ app.get('/scrape-myntra', async (req, res) => {
     const amazonHtml = await amazonUrl.text();
     const amazon = cheerio.load(amazonHtml);
 
+    // Parse Amazon products from the search results
     const amazonProducts = [];
     amazon('.s-main-slot .s-result-item').each((index, element) => {
         const priceText = amazon(element).find('.a-price-whole').text().trim();
@@ -471,34 +442,32 @@ app.get('/scrape-myntra', async (req, res) => {
         }
     });
 
+    // Launch Puppeteer for Flipkart scraping
     const browser2 = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page2 = await browser2.newPage();
 
-    // Set a user-agent to mimic a real browser
+    // Set user-agent for Flipkart scraping
     await page2.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
     // Construct the Flipkart search URL
     const flipkartSearchUrl = `https://www.flipkart.com/search?q=${encodeURIComponent(productNameFromUrl)}`;
 
-    // Navigate to the Flipkart search page
+    // Navigate to Flipkart and extract the page content
     await page2.goto(flipkartSearchUrl, { waitUntil: 'networkidle2' });
-
-    // Extract the HTML content of the page
     const flipkartHtml = await page2.content();
-
-    // Load Cheerio to parse the HTML
     const flipkart = cheerio.load(flipkartHtml);
 
+    // Parse Flipkart products from the search results
     const flipkartProducts = [];
-
     flipkart('a[target="_blank"]').each((index, element) => {
         const productElement = flipkart(element);
         const productLink = productElement.attr('href');
 
-        const regex = /\/([^\/]+)\/p\//; // Matches the part after '/' and before '/p/'
+        // Extract product name from the Flipkart URL
+        const regex = /\/([^\/]+)\/p\//;
         const match = productLink.match(regex);
 
         let productNameFromUrl = '';
@@ -510,10 +479,8 @@ app.get('/scrape-myntra', async (req, res) => {
 
         const fullLink = `https://www.flipkart.com${productLink}`;
 
-        // Dynamically find the price (target elements containing price)
-        const priceText = productElement.find('.Nx9bqj').text().trim(); // Use multiple selectors to handle dynamic class names
-
-        // console.log(`Product Link: ${productLink}, Price Text: ${priceText}, Title: ${productNameFromUrl}`);
+        // Extract product price (handle dynamic class names)
+        const priceText = productElement.find('.Nx9bqj').text().trim();
 
         if (productLink && priceText && productNameFromUrl) {
             flipkartProducts.push({
@@ -525,13 +492,11 @@ app.get('/scrape-myntra', async (req, res) => {
     });
 
     await browser2.close();
-    // console.log("Myntra", myntraProducts);
-    // console.log("Flipkart", flipkartProducts);
 
+    // Launch Puppeteer for Myntra product details
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-extensions', '--disable-setuid-sandbox',  '--disable-http2' // Disable HTTP2
-    ]
+        args: ['--no-sandbox', '--disable-extensions', '--disable-setuid-sandbox', '--disable-http2']
     });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
@@ -540,34 +505,26 @@ app.get('/scrape-myntra', async (req, res) => {
     const content = await page.content();
     const $ = cheerio.load(content);
 
-    // Extract the product title
+    // Extract the product title and price from Myntra
     const myntraActualTitle = $('.pdp-title').text().trim() + ' ' + $('.pdp-name').text().trim();
-
-    // Extract the product price
     const price = $('.pdp-price strong').text().trim();
-    const myntraActualPrice = cleanPrice(price)
+    const myntraActualPrice = cleanPrice(price);
 
     console.log("Myntra product title: ", myntraActualTitle);
     console.log("Myntra product price: ", myntraActualPrice);
 
     await browser.close();
+
     const similarPrices = [];
 
-    // Filter Myntra products with price less than Amazon price
+    // Compare Amazon products with Myntra
     const filteredAmazonProducts = amazonProducts.filter(({ price }) => price < myntraActualPrice);
-    console.log(filteredAmazonProducts)
-    // Filter Flipkart products with price less than Amazon price
-    const filteredFlipkartProducts = flipkartProducts.filter(({ price }) => price < myntraActualPrice);
-    console.log(filteredFlipkartProducts);
-
-    // Add filtered Myntra products to similarPrices
     filteredAmazonProducts.forEach(({ price: amazonPrice, link: amazonLink, title: amazonTitle }) => {
         const similarityAmazon = stringSimilarity.compareTwoStrings(myntraActualTitle, amazonTitle);
-        console.log("Amazon similarity", similarityAmazon);
         if (similarityAmazon > 0.6) {
             similarPrices.push({
                 amazonLink,
-                flipkartLink: null, // No matching Flipkart product
+                flipkartLink: null,
                 myntraPrice: Number(myntraActualPrice),
                 amazonPrice,
                 flipkartPrice: null,
@@ -575,14 +532,13 @@ app.get('/scrape-myntra', async (req, res) => {
         }
     });
 
-    // Add filtered Flipkart products to similarPrices
+    // Compare Flipkart products with Myntra
+    const filteredFlipkartProducts = flipkartProducts.filter(({ price }) => price < myntraActualPrice);
     filteredFlipkartProducts.forEach(({ price: flipkartPrice, link: flipkartLink, title: flipkartTitle }) => {
-        const similarityFlipkart = stringSimilarity.compareTwoStrings(price, flipkartTitle);
-        console.log("Flipkart similarity", similarityFlipkart);
-
+        const similarityFlipkart = stringSimilarity.compareTwoStrings(myntraActualTitle, flipkartTitle);
         if (similarityFlipkart > 0.6) {
             similarPrices.push({
-                amazonLink: null, // No matching Myntra product
+                amazonLink: null,
                 flipkartLink,
                 myntraPrice: Number(myntraActualPrice),
                 amazonPrice: null,
@@ -591,7 +547,7 @@ app.get('/scrape-myntra', async (req, res) => {
         }
     });
 
-    // Combine products where both Myntra and Flipkart meet the conditions
+    // Combine products with similarities
     filteredAmazonProducts.forEach(({ price: amazonPrice, link: amazonLink, title: amazonTitle }) => {
         filteredFlipkartProducts.forEach(({ price: flipkartPrice, link: flipkartLink, title: flipkartTitle }) => {
             const similarityFlipkart = stringSimilarity.compareTwoStrings(myntraActualTitle, flipkartTitle);
@@ -610,8 +566,7 @@ app.get('/scrape-myntra', async (req, res) => {
     });
 
     console.log("Similar Prices with links:", similarPrices);
-    res.json(similarPrices);
-
+    res.json(similarPrices); // Return the result as JSON
 });
 
 app.listen(port, () => {

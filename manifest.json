@@ -13,13 +13,11 @@
   "host_permissions": [
     "https://www.amazon.in/*",
     "https://www.flipkart.com/*",
-    "https://www.myntra.com/*"
+    "https://www.myntra.com/*",
+    "http://localhost:5000/*"
   ],
   "action": {
     "default_popup": "popup.html"
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src http://localhost:3000"
   },
   "content_scripts": [
     {
