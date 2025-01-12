@@ -38,6 +38,16 @@ This Chrome extension helps users compare prices of products across multiple e-c
 3. The extension then fetches and compares the prices of the matching products.
 4. It also checks for any available coupons or promotional codes on the current website and displays them to the user.
 
+# My Chrome Extension
+
+This Chrome Extension is designed to work perfectly on the following product pages:
+
+1. [Link 1](https://www.flipkart.com/bata-lace-up-men/p/itm3b2932e178316?pid=SHOGJSA4K9ZXGF2D&lid=LSTSHOGJSA4K9ZXGF2DFJ5FKL&marketplace=FLIPKART&q=shoes+bata&store=osp%2Fcil&spotlightTagId=BestsellerId_osp%2Fcil&srno=s_1_4&otracker=search&otracker1=search&fm=Search&iid=d3b637a8-1028-4f89-bbaa-c9edb9100fca.SHOGJSA4K9ZXGF2D.SEARCH&ppt=sp&ppn=sp&ssid=vjao761e800000001736691611521&qH=298c7c0c76c6cdd7)
+
+2. [Link 2](https://www.myntra.com/formal-shoes/bata/bata-men-lace-up-formal-derbys-shoes/24267522/buy)
+
+3. [Link 3](https://www.amazon.in/FAUSTO-Formal-Office-Dress-Numeric_7/dp/B0C7L6VRJT/ref=sr_1_8?dib=eyJ2IjoiMSJ9.zjMg_HLX1T7JaMcXScZ1jf3Oa6NB6tYuIYIOf5ofzBIZ6ctv7PcfHK2CpEcIgaggDM5X-lr54QbgZPjmZm4Bo2fmaVmT5AYBIQlisrOYp3KJa3Tpz2TVL6p9VvfWeW48ZK4_UuZtekiWtBulps8STNqqNn-0r60kqwv1InnA3__c0MacVw5SS-KU_whOfOBFfZxrgzr4_SU348wvmWqvxz4vZuq4ncpsJ7QrpRLxTXtJTFVJs8p6EkILUfgl00l87GYxSa5EtI00z2kD1h5cTsMX6FpbQWjPnE6Iy-c3G4JLKAq6_xE_YQGPlVnW89HRWP8kM1jwci1JSFQd5KWOLr7INLDVVciqnDR1BFSitpPI75NVzF9Bs-22LTALxRCcuUfzTW3IlTP878TOSN-CGxSIXI08wqodM4NRnNJxbIQIeOTj-SQhQMA59YqxI1DT.JcRkctoo_IeEkDZT-BIsfwhUaf27qQVzmfI-zz55yIo&dib_tag=se&keywords=Men+Lace-Up+Formal+Derbys+Shoes&qid=1736503919&sr=8-8)
+   
 ## Limitations
 
 - The accuracy of price comparison may not always be precise, as it depends on the similarity threshold set in the code for matching product titles.
