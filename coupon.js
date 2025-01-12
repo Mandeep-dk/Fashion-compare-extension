@@ -13,9 +13,6 @@ app.use(cors());
 
 // Route to scrape coupons from Amazon
 app.get('/coupon-amazon', async (req, res) => {
-    const { url } = req.query; // Get the URL from the query parameters
-    console.log('Scraping Amazon URL:', url);
-
     // Launch a new Puppeteer browser instance in headless mode
     const browser = await puppeteer.launch({ 
         headless: 'new', 
@@ -60,9 +57,6 @@ app.get('/coupon-amazon', async (req, res) => {
         coupons.push({ title, code: couponCode });
     });
 
-    // Log the scraped coupons
-    console.log(coupons);
-
     await browser.close(); // Close the browser
 
     res.json(coupons); // Send the scraped coupons as a JSON response
@@ -70,9 +64,6 @@ app.get('/coupon-amazon', async (req, res) => {
 
 // Route to scrape coupons from Flipkart
 app.get('/coupon-flipkart', async (req, res) => {
-    const { url } = req.query;
-    console.log('Scraping Flipkart URL:', url);
-
     const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
@@ -107,9 +98,6 @@ app.get('/coupon-flipkart', async (req, res) => {
 
 // Route to scrape coupons from Myntra
 app.get('/coupon-myntra', async (req, res) => {
-    const { url } = req.query;
-    console.log('Scraping Myntra URL:', url);
-
     const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
