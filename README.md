@@ -12,6 +12,28 @@ This Chrome extension helps users compare prices of products across multiple e-c
 - **Cross-Site Price Comparison**: Compares prices between multiple platforms to help users get the best deal.
 - **User-Friendly UI**: Displays the price comparison and coupons in a simple and intuitive interface.
 
+## How to install
+
+1. **Clone the GitHub Repository**
+
+- Clone the repository to your local machine:
+
+   ```bash
+   git clone https://github.com/Mandeep-dk/Fashion-compare-extension.git
+   
+2. **Start the Servers in VSCode**
+- Start server.js using `nodemon server.js`
+- Start coupon.js using `nodemon coupon.js`
+
+3. **Load the Extension in Chrome**
+- Go to `chrome://extensions/`
+- Turn on **Developer mode**
+- Click on **Load unpacked** and select the GitHub folder
+
+4. **Confirmation**
+- The extension will be successfully added to Chrome and can be used.
+
+
 ## How to Use
 
 1. Navigate to a product page on **Amazon**, **Flipkart**, **Myntra**, or another supported e-commerce site.
