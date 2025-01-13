@@ -33,15 +33,14 @@ This Chrome extension helps users compare prices of products across multiple e-c
 4. **Confirmation**
 - The extension will be successfully added to Chrome and can be used.
 
-
 ## How to Use
 
 1. Navigate to a product page on **Amazon**, **Flipkart**, **Myntra**, or another supported e-commerce site.
 2. Click on the extension icon in the browser toolbar to open the extension popup.
 3. Press the **Click the button to fetch data** button within the popup.
-4. The extension will automatically scrape the product details and display a price comparison from other e-commerce platforms.
-5. Coupons and promo codes for the product will also be shown if available.
-
+4. Wait approximately 30 seconds for the data to load.
+5. The extension will automatically scrape the product details and display a price comparison from other e-commerce platforms.
+6. Coupons and promo codes for the product will also be shown if available.
 
 ## Technologies Used
 
@@ -52,7 +51,6 @@ This Chrome extension helps users compare prices of products across multiple e-c
 - **string-similarity**: For matching product titles across different platforms.
 - **HTML/CSS**: Front-end interface for the extension popup.
 
-
 ## How It Works
 
 1. The extension scrapes the title of the product from the currently open page.
@@ -60,7 +58,7 @@ This Chrome extension helps users compare prices of products across multiple e-c
 3. The extension then fetches and compares the prices of the matching products.
 4. It also checks for any available coupons or promotional codes on the current website and displays them to the user.
 
-# My Chrome Extension
+# Example Product Pages
 
 This Chrome Extension is designed to work perfectly on the following product pages:
 
@@ -74,7 +72,7 @@ This Chrome Extension is designed to work perfectly on the following product pag
 
 - The accuracy of price comparison may not always be precise, as it depends on the similarity threshold set in the code for matching product titles.
 - The extension relies on web scraping, which can be affected by changes in the structure and layout of the e-commerce sites.
-
+- Currently, there is noticeable latency in fetching data; optimizing the scraping process to reduce wait times is a priority.
 
 ## Future Improvements
 
