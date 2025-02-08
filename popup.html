@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fashion Price Comparison</title>
-  <style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -17,6 +18,8 @@
       height: 100%;
       width: 400px;
       padding: 20px;
+      backdrop-filter: blur(10px);
+      background: transparent;
     }
 
     h1 {
@@ -34,38 +37,38 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 100%;
-      min-height: 200px;
+      min-height: 100px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-
+    
     #fetch-data {
       padding: 12px 30px;
-      background-color: #007BFF;
-      color: white;
+      background-color: #eec821;
+      color: rgb(255, 255, 255);
       border: none;
       border-radius: 5px;
       font-size: 18px;
       cursor: pointer;
       transition: background-color 0.3s ease, transform 0.2s ease;
       margin-bottom: 20px;
+      width: 200px; 
+      text-align: center; 
     }
 
     #fetch-data:hover {
-      background-color: #0056b3;
-      transform: scale(1.05);
+      background-color: #f5e33f;
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0px #000;
     }
+    #fetch-data:active{
+      background-color: #f3f177;
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px #000;
 
-    .product {
-      background-color: #fff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
     }
 
     .product a {
@@ -77,6 +80,12 @@
     .product a:hover {
       text-decoration: underline;
     }
+
+    ul {
+            list-style-type: none; 
+            padding: 0;
+            margin: 0;
+        }
 
     .coupon-card {
       background-color: #f9f9f9;
@@ -96,7 +105,7 @@
     }
 
     .coupon-code {
-      background-color: #007BFF;
+      background-color: #ffee00;
       color: white;
       padding: 8px 12px;
       border-radius: 5px;
@@ -109,15 +118,38 @@
     .coupon-code:hover {
       background-color: #0056b3;
     }
+    .platform-icons{
+      display: flex;
+      justify-content: space-around;
+       margin-bottom: 10px;
+       margin-top: 20px;
+    }
+    .platform-icons img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .tagline {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+        }
 
   </style>
 </head>
 <body>
-  <h1>Similar Products</h1>
-  <div id="results">Click the button to fetch data</div>
+  <h1>Fashion Arc</h1>
+  <div id="results">
+    <div class="platform-icons"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjK2Xvr6JqYrEarpQO3-3gpnQfixBdwHcrGA&s" title="Flipkart">
+      <img src="https://i.pinimg.com/originals/01/ca/da/01cada77a0a7d326d85b7969fe26a728.jpg" title="Amazon">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJaZFxwPVRLp4lnm6GtAt154e86wb-5A9QSA&s" title="Myntra"></div>
+  </div>
+  <div class="tagline">Get the best deal & coupons</div>
   <div id="loading" style="display: none;">Loading...</div>
-  <button id="fetch-data">Fetch Similar Products</button>
-
+  <button id="fetch-data">Search
+    <i class="fa fa-search"></i>
+    </button>
   <script src="https://cdn.jsdelivr.net/npm/string-similarity@4.0.4/string-similarity.min.js"></script>
   <script src="content.js"></script>
   <script src="popup.js"></script>
