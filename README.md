@@ -6,11 +6,13 @@ This Chrome extension helps users compare prices of products across multiple e-c
 
 ## Features
 
-- **Price Comparison**: The extension scrapes product data from Amazon, Flipkart, Myntra, and other popular e-commerce websites to display the best price.
+- **Price Comparison**: The extension scrapes product data from Amazon, Flipkart, Myntra, and other popular e-commerce websites to display the best price in real-time.
 - **Title Matching**: Using the string-similarity library, the extension matches the product title from the current page to the titles listed on other e-commerce sites.
 - **Coupon Fetching**: Automatically fetches available coupons and promo codes for the current website or product.
-- **Cross-Site Price Comparison**: Compares prices between multiple platforms to help users get the best deal.
+- **Cross-Site Price Comparison**: Compares prices between multiple platforms to help users get the best deal in real-time.
 - **User-Friendly UI**: Displays the price comparison and coupons in a simple and intuitive interface.
+- **Privacy**: The extension operates only when actively invoked by the user. This prevents
+  background activity and unnecessary data collection.
 
 ## How to install
 
@@ -18,19 +20,24 @@ This Chrome extension helps users compare prices of products across multiple e-c
 
 - Clone the repository to your local machine:
 
-   ```bash
-   git clone https://github.com/Mandeep-dk/Fashion-compare-extension.git
-   
+  ```bash
+  git clone https://github.com/Mandeep-dk/Fashion-compare-extension.git
+
+  ```
+
 2. **Start the Servers in VSCode**
+
 - Start server.js using `nodemon server.js`
 - Start coupon.js using `nodemon coupon.js`
 
 3. **Load the Extension in Chrome**
+
 - Go to `chrome://extensions/`
 - Turn on **Developer mode**
 - Click on **Load unpacked** and select the GitHub folder
 
 4. **Confirmation**
+
 - The extension will be successfully added to Chrome and can be used.
 
 ## How to Use
@@ -67,7 +74,7 @@ This Chrome Extension is designed to work perfectly on the following product pag
 2. [Link 2](https://www.myntra.com/formal-shoes/bata/bata-men-lace-up-formal-derbys-shoes/24267522/buy)
 
 3. [Link 3](https://www.amazon.in/FAUSTO-Formal-Office-Dress-Numeric_7/dp/B0C7L6VRJT/ref=sr_1_8?dib=eyJ2IjoiMSJ9.zjMg_HLX1T7JaMcXScZ1jf3Oa6NB6tYuIYIOf5ofzBIZ6ctv7PcfHK2CpEcIgaggDM5X-lr54QbgZPjmZm4Bo2fmaVmT5AYBIQlisrOYp3KJa3Tpz2TVL6p9VvfWeW48ZK4_UuZtekiWtBulps8STNqqNn-0r60kqwv1InnA3__c0MacVw5SS-KU_whOfOBFfZxrgzr4_SU348wvmWqvxz4vZuq4ncpsJ7QrpRLxTXtJTFVJs8p6EkILUfgl00l87GYxSa5EtI00z2kD1h5cTsMX6FpbQWjPnE6Iy-c3G4JLKAq6_xE_YQGPlVnW89HRWP8kM1jwci1JSFQd5KWOLr7INLDVVciqnDR1BFSitpPI75NVzF9Bs-22LTALxRCcuUfzTW3IlTP878TOSN-CGxSIXI08wqodM4NRnNJxbIQIeOTj-SQhQMA59YqxI1DT.JcRkctoo_IeEkDZT-BIsfwhUaf27qQVzmfI-zz55yIo&dib_tag=se&keywords=Men+Lace-Up+Formal+Derbys+Shoes&qid=1736503919&sr=8-8)
-   
+
 ## Limitations
 
 - The accuracy of price comparison may not always be precise, as it depends on the similarity threshold set in the code for matching product titles.
